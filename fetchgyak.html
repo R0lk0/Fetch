@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autó keresés</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            width: 300px;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .card h3 {
+            margin-top: 0;
+        }
+
+        .delete-btn {
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .delete-btn:hover {
+            background-color: #c9302c;
+        }
+
+        #errorOutput {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+        
+    <label for="userID">Kérem az autó ID-ját:</label>
+    <input type="number" min="1" max="4" id="userID">
+    <button onclick="kereses()">Keresés</button>
+    <p id="errorOutput"></p>
+
+    <div class="cards" id="cardsContainer"></div>
+
+</div>
+
+<script>
+    function fetching(id) {
+        if (id === "") {
+            kiirHibat("Adj meg egy ID-t!");
+            return;
+        }
+
+        fetch("https://surveys-5jvt.onrender.com/api/cars/")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Nem sikerült lekérni az adatokat");
+                }
+                return response.json();
+            })
+            .then(cars => {
+                const car = cars.find(c => c.id == id);
+
+                if (!car) {
+                    kiirHibat("Nincs ilyen azonosítójú autó");
+                    return;
+                }
+
+                torolHibat();
+                kartyaLetrehozasa(car);
+            })
+            .catch(error => {
+                kiirHibat("Hiba történt: " + error.message);
+            });
+    }
+
+    function kartyaLetrehozasa(car) {
+        const container = document.getElementById("cardsContainer");
+
+        // Ne lehessen ugyanazt kétszer hozzáadni
+        if (document.getElementById("car-" + car.id)) {
+            kiirHibat("Ez az autó már meg van jelenítve!");
+            return;
+        }
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.id = "car-" + car.id;
+
+        card.innerHTML = `
+            <img src="car.jpg" width="300">
+            <h3>${car.brand} ${car.model}</h3>
+            <p><strong>ID:</strong> ${car.id}</p>
+            <p><strong>Évjárat:</strong> ${car.year}</p>
+            <button class="delete-btn" onclick="kartyaTorles('${card.id}')">
+                Törlés
+            </button>
+        `;
+
+        container.appendChild(card);
+    }
+
+    function kartyaTorles(cardId) {
+        document.getElementById(cardId).remove();
+    }
+
+    function kereses() {
+        const id = document.getElementById("userID").value.trim();
+        fetching(id);
+    }
+
+    function kiirHibat(uzenet) {
+        document.getElementById("errorOutput").textContent = uzenet;
+    }
+
+    function torolHibat() {
+        document.getElementById("errorOutput").textContent = "";
+    }
+</script>
+</body>
+</html>
